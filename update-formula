@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+require 'net/http'
+require 'uri'
+require 'pathname'
+
+# Setup
+Repo_dir = Pathname.new($PROGRAM_NAME).dirname
+New_formula_path = Repo_dir.join('mpv.rb')
+
+# Grab and modify upstream formula
+Upstream_formula_url = 'https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/mpv.rb'
+Upstream_formula = Net::HTTP.get(URI.parse(Upstream_formula_url)).split("\n")
+
+Insert_pos = ', "waf", "install"'
+
+New_formula = Upstream_formula.each_with_object([]) do |line, formula|
+  formula.push(line)
+
+  next unless line.end_with?(Insert_pos)
+
+  # Add commands to build app
+  command = line.split(Insert_pos).first
+  formula.push('')
+  formula.push(%Q(#{command}, "TOOLS/osxbundle.py", "build/mpv"))
+  formula.push(%Q(    prefix.install "build/mpv.app"))
+end
+
+# Save new formula and push
+New_formula_path.write("#{New_formula.join("\n")}\n")
+
+system('git', '-C', Repo_dir.to_path, 'commit', New_formula_path.to_path, '--message', 'Auto-update formula')
+system('git', '-C', Repo_dir.to_path, 'push', 'origin', 'master')
