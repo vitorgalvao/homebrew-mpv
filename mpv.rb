@@ -62,8 +62,7 @@ class Mpv < Formula
     system Formula["python@3.9"].opt_bin/"python3", "waf", "install"
 
     system Formula["python@3.9"].opt_bin/"python3", "TOOLS/osxbundle.py", "build/mpv"
-    FileUtils.rmtree("/Applications/mpv.app") if Dir.exist?("/Applications/mpv.app")
-    FileUtils.mv("build/mpv.app", "/Applications")
+    prefix.install "build/mpv.app"
   end
 
   test do
